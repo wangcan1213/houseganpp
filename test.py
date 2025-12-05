@@ -77,7 +77,7 @@ def main():
     for i, sample in enumerate(fp_loader):
 
         # draw real graph and groundtruth
-        mks, nds, eds, _, _ = sample
+        mks, nds, eds, _, _ = sample                             # nds是经过18类one-hot之后的nodes，num_nodes*18, eds是一个列表，每个元素是，node1_id, 1/-1, node2_id
         real_nodes = np.where(nds.detach().cpu()==1)[-1]
         graph = [nds, eds]
         true_graph_obj, graph_im = draw_graph([real_nodes, eds.detach().cpu().numpy()])
@@ -90,11 +90,26 @@ def main():
         _round = 0
         
         # initialize layout
+        print(nds)
+        print(nds.shape)
+        for e in eds:
+            if e[1] == 1 and 17 not in [real_nodes[e[0]]+1, real_nodes[e[-1]]+1]:
+                print(e)
+        print(len(eds))
+        print(real_nodes)
+        print("\n\n")
+        ROOM_CLASS = {"living_room": 1, "kitchen": 2, "bedroom": 3, "bathroom": 4, "balcony": 5, "entrance": 6, "dining room": 7, "study room": 8,
+              "storage": 10 , "front door": 15, "unknown": 16, "interior_door": 17}
+        ROOM_CLASS2 = {v:k for k,v in ROOM_CLASS.items()}
+        for e in eds:
+            if e[1] == 1:
+                print("{}{} ---- {}{}".format(ROOM_CLASS2[real_nodes[e[0]]+1], e[0], ROOM_CLASS2[real_nodes[e[2]]+1], e[2]))
+        quit()
         state = {'masks': None, 'fixed_nodes': []}
         masks = _infer(graph, model, state)
         im0 = draw_masks(masks.copy(), real_nodes)
         im0 = torch.tensor(np.array(im0).transpose((2, 0, 1)))/255.0 
-        # save_image(im0, './{}/fp_init_{}.png'.format(opt.out, i), nrow=1, normalize=False) # visualize init image
+        save_image(im0, './{}/fp_init_{}.png'.format(opt.out, i), nrow=1, normalize=False) # visualize init image
 
         # generate per room type
         for _iter, _types in enumerate(selected_types):

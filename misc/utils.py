@@ -205,7 +205,7 @@ def draw_graph(g_true):
     # add outside node
     G_true.add_nodes_from([(-1, {'label':-1})])
     colors_H.append("white")
-    node_size.append(750)
+    node_size.append(150)
     edgecolors.append('black')
     linewidths.append(3.0)
     

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>右键拖动连线 Demo</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+    }
+    .container { display: flex; height: 100vh; }
+    .left-panel { flex: 1; border-right:1px solid #ccc; padding:16px; display:flex; flex-direction:column; }
+    .right-panel { width:40%; padding:16px; display:flex; flex-direction:column; }
+    #graph { flex:1; background:#fff; border-radius:8px; box-shadow:0 0 4px rgba(0,0,0,.1); }
+    .palette { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+    .room-btn {
+      border:none; padding:6px 10px; border-radius:4px;
+      color:#fff; cursor:pointer; font-size:12px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="left-panel">
+    <h2>右键拖动连线（真正可用）</h2>
+
+    <div class="palette" id="palette"></div>
+
+    <button id="generateBtn">Generate</button>
+    <div id="status" style="font-size:12px;color:#444;margin-top:6px;">
+      左键拖动节点；右键按住节点 → 拖到另一节点 → 松开右键 = 连线/删除线
+    </div>
+
+    <div id="graph"></div>
+  </div>
+
+  <div class="right-panel">
+    <h2>生成结果</h2>
+    <img id="mainImage" style="width:380px;height:380px;background:#fff;border:1px solid #ccc;">
+    <div id="thumbs" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+  </div>
+
+</div>
+<script>
+/* =========================================================
+   1. 房间类型定义
+========================================================= */
+const ROOM_TYPES = [
+  {label:"living",   color:"#e63946"},
+  {label:"kitchen",  color:"#bc6c25"},
+  {label:"bedroom",  color:"#f1c40f"},
+  {label:"bathroom", color:"#95a5a6"},
+  {label:"balcony",  color:"#7ed6df"},
+  {label:"corridor", color:"#27ae60"},
+  {label:"closet",   color:"#8e44ad"},
+];
+
+let addMode = null;
+
+/* 按钮生成 */
+const palette = d3.select("#palette");
+ROOM_TYPES.forEach(rt=>{
+  palette.append("button")
+    .attr("class","room-btn")
+    .style("background",rt.color)
+    .text(rt.label)
+    .on("click",()=>{ addMode = rt.label; });
+});
+
+/* =========================================================
+   2. Graph 数据结构
+========================================================= */
+let nodes = [];
+let links = [];
+let nextId = 0;
+
+/* =========================================================
+   3. SVG 创建
+========================================================= */
+const graphDiv = document.getElementById("graph");
+const width = graphDiv.clientWidth;
+const height = graphDiv.clientHeight;
+
+const svg = d3.select("#graph")
+  .append("svg")
+  .attr("width", width)
+  .attr("height", height)
+  .style("background", "#fff");
+
+/* 禁用右键菜单 */
+svg.on("contextmenu", event => event.preventDefault());
+
+/* 分组 */
+const linkGroup = svg.append("g").attr("stroke","#888").attr("stroke-width",2);
+const tempLinkGroup = svg.append("g").attr("stroke","#444").attr("stroke-width",1).attr("stroke-dasharray","4 4");
+const nodeGroup = svg.append("g");
+const labelGroup = svg.append("g");
+
+let nodeElems = nodeGroup.selectAll("circle");
+let linkElems = linkGroup.selectAll("line");
+let labelElems = labelGroup.selectAll("text");
+
+/* 临时连线预览 */
+let tempLine = null;
+
+/* =========================================================
+   4. 添加节点：左键点击空白区域
+========================================================= */
+svg.on("click", (event)=>{
+  if (!addMode) return;
+  const [x,y] = d3.pointer(event);
+
+  // 防止点在已有节点上时误触
+  if (hitNode(x, y)) return;
+
+  nodes.push({
+    id: nextId++,
+    label: addMode,
+    x, y
+  });
+  addMode = null;
+  updateGraph();
+});
+
+/* 判断点是否落在某节点上 */
+function hitNode(x,y) {
+  return nodes.some(n=>{
+    const dx=n.x-x, dy=n.y-y;
+    return dx*dx + dy*dy < 20*20;
+  });
+}
+
+/* =========================================================
+   5. 左键拖动节点  +  右键拖动连线
+========================================================= */
+
+let rightDragStartNode = null;
+let isDraggingRight = false;
+
+/* pointerdown：判断是否右键按下节点 */
+svg.on("pointerdown", (event)=>{
+  const [mx,my] = d3.pointer(event);
+  const targetNode = findNodeAt(mx, my);
+
+  if (!targetNode) return;
+
+  if (event.button === 2) {
+    // 右键按下 → 准备连线
+    isDraggingRight = true;
+    rightDragStartNode = targetNode;
+
+    // 创建“临时线预览”
+    tempLine = tempLinkGroup.append("line")
+      .attr("x1", targetNode.x)
+      .attr("y1", targetNode.y)
+      .attr("x2", mx)
+      .attr("y2", my);
+  }
+});
+
+/* pointermove：更新临时连线 */
+svg.on("pointermove", (event)=>{
+  if (!isDraggingRight || !tempLine) return;
+
+  const [mx,my] = d3.pointer(event);
+  tempLine.attr("x2", mx).attr("y2", my);
+});
+
+/* pointerup：右键松开 → 尝试连线 */
+svg.on("pointerup", (event)=>{
+  if (event.button !== 2) return;
+
+  const [mx,my] = d3.pointer(event);
+
+  if (isDraggingRight && rightDragStartNode) {
+    const targetNode = findNodeAt(mx,my, except = rightDragStartNode.id);
+
+    // 移除临时线
+    if (tempLine) tempLine.remove();
+    tempLine = null;
+
+    if (targetNode) {
+      toggleLink(rightDragStartNode.id, targetNode.id);
+    }
+  }
+
+  // 清空状态
+  isDraggingRight = false;
+  rightDragStartNode = null;
+});
+
+/* =========================================================
+   6. 左键拖动节点（使用 d3.drag）
+========================================================= */
+
+const drag = d3.drag()
+  .on("start", (event, d)=>{
+    if (event.sourceEvent.button !== 0) return; // 仅左键
+    d.fx = d.x;
+    d.fy = d.y;
+  })
+  .on("drag", (event, d)=>{
+    if (event.sourceEvent.button !== 0) return;
+    d.x = event.x;
+    d.y = event.y;
+    d.fx = event.x;
+    d.fy = event.y;
+    updateGraph();
+  })
+  .on("end", (event, d)=>{
+    if (event.sourceEvent.button !== 0) return;
+    d.fx = null;
+    d.fy = null;
+  });
+
+/* =========================================================
+   7. 公共函数
+========================================================= */
+function findNodeAt(x,y, except=null) {
+  for (const n of nodes) {
+    if (except!==null && n.id===except) continue;
+    const dx=n.x-x, dy=n.y-y;
+    if (dx*dx + dy*dy < 20*20) return n;
+  }
+  return null;
+}
+
+function toggleLink(a,b){
+  const idx = links.findIndex(l=>
+    (l.source.id ?? l.source)===a &&
+    (l.target.id ?? l.target)===b
+  );
+
+  if (idx>=0) links.splice(idx,1);
+  else links.push({source:a, target:b});
+
+  updateGraph();
+}
+
+/* =========================================================
+   8. 图刷新
+========================================================= */
+function updateGraph(){
+
+  /* 更新连线 */
+  linkElems = linkElems.data(links);
+  linkElems.exit().remove();
+  linkElems = linkElems.enter()
+    .append("line")
+    .merge(linkElems)
+    .attr("x1", d => nodeById(d.source).x)
+    .attr("y1", d => nodeById(d.source).y)
+    .attr("x2", d => nodeById(d.target).x)
+    .attr("y2", d => nodeById(d.target).y);
+
+  /* 更新节点 */
+  nodeElems = nodeElems.data(nodes, d=>d.id);
+  nodeElems.exit().remove();
+  nodeElems = nodeElems.enter()
+    .append("circle")
+    .attr("r", 16)
+    .attr("fill", d => ROOM_TYPES.find(r=>r.label===d.label).color)
+    .attr("stroke","#333")
+    .attr("stroke-width",2)
+    .call(drag)
+    .merge(nodeElems)
+    .attr("cx", d=>d.x)
+    .attr("cy", d=>d.y);
+
+  /* 更新标签 */
+  labelElems = labelElems.data(nodes, d=>d.id);
+  labelElems.exit().remove();
+  labelElems = labelElems.enter()
+    .append("text")
+    .text(d=>d.label)
+    .attr("font-size",11)
+    .attr("dy", 4)
+    .attr("text-anchor","middle")
+    .merge(labelElems)
+    .attr("x", d=>d.x)
+    .attr("y", d=>d.y + 25);
+}
+
+function nodeById(id){
+  return typeof id==="object"
+    ? id
+    : nodes.find(n=>n.id===id);
+}
+
+/* =========================================================
+   9. 初始添加一个 living 节点
+========================================================= */
+nodes.push({
+  id: nextId++,
+  label:"living",
+  x: width/2,
+  y: height/2
+});
+updateGraph();
+
+/* =========================================================
+   10. 调用后端生成布局
+========================================================= */
+
+document.getElementById("generateBtn").onclick = ()=>{
+  const payload = {
+    nodes: nodes.map(n=>({id:n.id, label:n.label})),
+    edges: links.map(l=>({
+      source: (l.source.id ?? l.source),
+      target: (l.target.id ?? l.target)
+    }))
+  };
+
+  fetch("/generate",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  })
+    .then(r=>r.json())
+    .then(d=>{
+      const imgs = d.layouts || [];
+      const main = document.getElementById("mainImage");
+      const thumbs = document.getElementById("thumbs");
+      thumbs.innerHTML="";
+
+      if (imgs.length>0) {
+        main.src = imgs[0];
+
+        imgs.forEach(src=>{
+          const im=document.createElement("img");
+          im.src=src;
+          im.style.width="80px";
+          im.style.height="80px";
+          im.style.cursor="pointer";
+          im.onclick = ()=> main.src = src;
+          thumbs.appendChild(im);
+        });
+      }
+    });
+};
+</script>
+
+</body>
+</html>
