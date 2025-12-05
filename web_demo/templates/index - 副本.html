@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>HouseGAN++ 交互 Demo</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    .left-panel {
+      flex: 1;
+      border-right: 1px solid #ccc;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+    .right-panel {
+      width: 40%;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+    h2 {
+      margin: 4px 0 8px;
+      font-size: 16px;
+    }
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .room-btn {
+      border: none;
+      padding: 4px 10px;
+      border-radius: 16px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #666;
+    }
+    .room-btn.active {
+      box-shadow: 0 0 0 2px rgba(0,112,243,0.5);
+    }
+    .color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #fff;
+    }
+    #graph {
+      flex: 1;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 4px rgba(0,0,0,.08);
+      margin-top: 6px;
+    }
+    #status {
+      font-size: 12px;
+      color: #444;
+      margin-top: 4px;
+    }
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    #graphInfo {
+      font-size: 12px;
+      color: #555;
+    }
+    #generateBtn {
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: none;
+      background: #0070f3;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    #generateBtn:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+    #numSamples {
+      font-size: 12px;
+    }
+
+    .right-panel h2 {
+      margin-bottom: 8px;
+    }
+    #mainImage {
+      width: 100%;
+      max-width: 380px;
+      height: auto;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+    #thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    #thumbs img {
+      width: 80px;
+      height: 80px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="left-panel">
+    <h2>交互式房间连通图（左移右连）</h2>
+
+    <div class="palette" id="palette"></div>
+
+    <div id="toolbar">
+      <button id="generateBtn">生成平面图</button>
+      <label>样本数：
+        <select id="numSamples">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4" selected>4</option>
+          <option value="8">8</option>
+        </select>
+      </label>
+      <span id="graphInfo">节点: <span id="nodeCount">0</span>，连线: <span id="edgeCount">0</span></span>
+    </div>
+
+    <div id="status">
+      左键拖动节点移动；右键按住节点 → 拖到另一节点 → 松开右键 = 添加/删除连线。<br>
+      点击空白区域添加一个当前房型的节点。
+    </div>
+
+    <div id="graph"></div>
+  </div>
+
+  <div class="right-panel">
+    <h2>HouseGAN++ 生成结果</h2>
+    <img id="mainImage" alt="生成结果预览">
+    <div id="thumbs"></div>
+  </div>
+
+</div>
+
+<script>
+  // ============ 全局状态 ============
+  const paletteDiv = d3.select("#palette");
+  const graphDiv = document.getElementById("graph");
+  const canvasWidth = graphDiv.clientWidth;
+  const canvasHeight = graphDiv.clientHeight;
+
+  const svg = d3.select("#graph")
+    .append("svg")
+    .attr("width", canvasWidth)
+    .attr("height", canvasHeight)
+    .style("background", "#fff");
+
+  // 禁用右键菜单
+  svg.on("contextmenu", event => event.preventDefault());
+
+  const linkGroup = svg.append("g").attr("stroke","#888").attr("stroke-width",2);
+  const tempLinkGroup = svg.append("g").attr("stroke","#444").attr("stroke-width",1).attr("stroke-dasharray","4 4");
+  const nodeGroup = svg.append("g");
+  const labelGroup = svg.append("g");
+
+  let roomTypes = [];      // [{key,label,color,label_id}, ...] 从后端获取
+  let addModeKey = null;   // 当前 palette 选中的房型 key
+
+  let nodes = [];          // {id, key, label, x, y}
+  let links = [];          // {source, target}
+  let nextId = 0;
+
+  let nodeElems = nodeGroup.selectAll("circle");
+  let linkElems = linkGroup.selectAll("line");
+  let labelElems = labelGroup.selectAll("text");
+
+  let nodeCountSpan = document.getElementById("nodeCount");
+  let edgeCountSpan = document.getElementById("edgeCount");
+  let statusSpan = document.getElementById("status");
+  const generateBtn = document.getElementById("generateBtn");
+  const numSamplesSelect = document.getElementById("numSamples");
+  const mainImage = document.getElementById("mainImage");
+  const thumbsDiv = document.getElementById("thumbs");
+
+  // 临时连线预览（右键拖动）
+  let tempLine = null;
+  let rightDragStartNode = null;
+  let isDraggingRight = false;
+
+  // ============ 从后端获取房型列表 ============
+  fetch("/room_types")
+    .then(r => r.json())
+    .then(data => {
+      roomTypes = data.room_types || [];
+      if (roomTypes.length === 0) {
+        statusSpan.textContent = "（未能从后端获取房型列表，请检查 /room_types）";
+        return;
+      }
+      renderPalette();
+      // 默认选第一个房型
+      addModeKey = roomTypes[0].key;
+      d3.select(`#btn-${addModeKey}`).classed("active", true);
+
+      // 初始加一个节点
+      nodes.push({
+        id: nextId++,
+        key: roomTypes[0].key,
+        label: roomTypes[0].label,
+        x: canvasWidth / 2,
+        y: canvasHeight / 2
+      });
+      updateCounts();
+      updateGraph();
+    })
+    .catch(err => {
+      console.error(err);
+      statusSpan.textContent = "获取房型失败，请检查控制台。";
+    });
+
+  function renderPalette() {
+    paletteDiv.selectAll("*").remove();
+    roomTypes.forEach(rt => {
+      const btn = paletteDiv.append("button")
+        .attr("class", "room-btn")
+        .attr("id", `btn-${rt.key}`)
+        .style("background", rt.color)
+        .on("click", () => {
+          addModeKey = rt.key;
+          d3.selectAll(".room-btn").classed("active", false);
+          d3.select(`#btn-${rt.key}`).classed("active", true);
+        });
+
+      btn.append("span")
+        .attr("class", "color-dot")
+        .style("background", rt.color);
+
+      btn.append("span")
+        .text(rt.label);
+    });
+  }
+
+  // ============ 辅助查询 ============
+  function findRoomTypeByKey(key) {
+    return roomTypes.find(rt => rt.key === key);
+  }
+
+  function nodeById(id) {
+    return nodes.find(n => n.id === id);
+  }
+
+  function getNodeAt(x, y, exceptId = null) {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i];
+      if (exceptId !== null && n.id === exceptId) continue;
+      const dx = n.x - x;
+      const dy = n.y - y;
+      if (dx*dx + dy*dy <= 20*20) return n;
+    }
+    return null;
+  }
+
+  function updateCounts() {
+    nodeCountSpan.textContent = nodes.length;
+    edgeCountSpan.textContent = links.length;
+  }
+
+  // ============ 左键：点击空白添加节点 ============
+  svg.on("click", (event) => {
+    const [x, y] = d3.pointer(event);
+    const hit = getNodeAt(x, y);
+    // 如果点在节点上，就不在这里处理（避免与拖动、连线冲突）
+    if (hit) return;
+
+    if (!addModeKey) {
+      statusSpan.textContent = "请先在上方选择一个房间类型。";
+      return;
+    }
+    const rt = findRoomTypeByKey(addModeKey);
+    if (!rt) {
+      statusSpan.textContent = "当前选中的房型在列表中不存在，请刷新。";
+      return;
+    }
+    nodes.push({
+      id: nextId++,
+      key: rt.key,
+      label: rt.label,
+      x, y
+    });
+    updateCounts();
+    updateGraph();
+  });
+
+  // ============ 右键拖动连线/删线 ============
+  svg.on("pointerdown", (event) => {
+    const [mx, my] = d3.pointer(event);
+    const targetNode = getNodeAt(mx, my);
+    if (!targetNode) return;
+
+    if (event.button === 2) {
+      // 右键按下：开始拖线
+      isDraggingRight = true;
+      rightDragStartNode = targetNode;
+
+      tempLine = tempLinkGroup.append("line")
+        .attr("x1", targetNode.x)
+        .attr("y1", targetNode.y)
+        .attr("x2", mx)
+        .attr("y2", my);
+    }
+  });
+
+  svg.on("pointermove", (event) => {
+    if (!isDraggingRight || !tempLine) return;
+    const [mx, my] = d3.pointer(event);
+    tempLine.attr("x2", mx).attr("y2", my);
+  });
+
+  svg.on("pointerup", (event) => {
+    if (event.button !== 2) return;
+    const [mx, my] = d3.pointer(event);
+
+    if (isDraggingRight && rightDragStartNode) {
+      const targetNode = getNodeAt(mx, my, rightDragStartNode.id);
+      if (tempLine) tempLine.remove();
+      tempLine = null;
+
+      if (targetNode) {
+        toggleLink(rightDragStartNode.id, targetNode.id);
+      }
+    }
+    isDraggingRight = false;
+    rightDragStartNode = null;
+  });
+
+  // ============ 左键拖动节点 ============
+  const drag = d3.drag()
+    .on("start", (event, d) => {
+      if (event.sourceEvent.button !== 0) return; // 只响应左键
+      d.fx = d.x;
+      d.fy = d.y;
+    })
+    .on("drag", (event, d) => {
+      if (event.sourceEvent.button !== 0) return;
+      d.x = event.x;
+      d.y = event.y;
+      d.fx = event.x;
+      d.fy = event.y;
+      updateGraph();
+    })
+    .on("end", (event, d) => {
+      if (event.sourceEvent.button !== 0) return;
+      d.fx = null;
+      d.fy = null;
+    });
+
+  function toggleLink(aId, bId) {
+    if (aId === bId) return;
+    const idx = links.findIndex(l =>
+      (l.source === aId && l.target === bId) ||
+      (l.source === bId && l.target === aId)
+    );
+    if (idx >= 0) {
+      // 已存在 → 删除
+      links.splice(idx, 1);
+    } else {
+      // 不存在 → 添加
+      links.push({ source: aId, target: bId });
+    }
+    updateCounts();
+    updateGraph();
+  }
+
+  // ============ 重绘图形 ============
+  function updateGraph() {
+    // 更新连线
+    linkElems = linkElems.data(links, d => `${d.source}-${d.target}`);
+    linkElems.exit().remove();
+    linkElems = linkElems.enter()
+      .append("line")
+      .merge(linkElems)
+      .attr("x1", d => nodeById(d.source).x)
+      .attr("y1", d => nodeById(d.source).y)
+      .attr("x2", d => nodeById(d.target).x)
+      .attr("y2", d => nodeById(d.target).y);
+
+    // 更新节点
+    nodeElems = nodeElems.data(nodes, d => d.id);
+    nodeElems.exit().remove();
+    nodeElems = nodeElems.enter()
+      .append("circle")
+      .attr("r", 16)
+      .attr("stroke", "#333")
+      .attr("stroke-width", 2)
+      .call(drag)
+      .merge(nodeElems)
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y)
+      .attr("fill", d => {
+        const rt = findRoomTypeByKey(d.key);
+        return rt ? rt.color : "#cccccc";
+      });
+
+    // 更新文本标签（显示房间名）
+    labelElems = labelElems.data(nodes, d => d.id);
+    labelElems.exit().remove();
+    labelElems = labelElems.enter()
+      .append("text")
+      .attr("font-size", 11)
+      .attr("text-anchor", "middle")
+      .attr("dy", 28)
+      .merge(labelElems)
+      .attr("x", d => d.x)
+      .attr("y", d => d.y)
+      .text(d => d.label);
+  }
+
+  // ============ 调用后端 /generate ============
+  generateBtn.addEventListener("click", () => {
+    if (nodes.length === 0) {
+      alert("请先在左侧画布中添加至少一个房间节点。");
+      return;
+    }
+
+    const payload = {
+      nodes: nodes.map(n => ({ id: n.id, label: n.key })),  // label = ROOM_CLASS 的 key
+      edges: links.map(l => [l.source, l.target]),
+      num_samples: parseInt(numSamplesSelect.value, 10)
+    };
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = "生成中...";
+    statusSpan.textContent = "正在调用 HouseGAN++ 推理，请稍候…";
+
+    fetch("/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          console.error(data.error);
+          alert("后端错误：\n" + data.error);
+          statusSpan.textContent = "生成失败（请查看后端日志）。";
+          return;
+        }
+        const imgs = data.images || [];
+        thumbsDiv.innerHTML = "";
+        if (imgs.length === 0) {
+          statusSpan.textContent = "没有生成任何结果。";
+          mainImage.removeAttribute("src");
+          return;
+        }
+
+        // 显示第一张为大图
+        mainImage.src = "data:image/png;base64," + imgs[0];
+
+        imgs.forEach((b64, idx) => {
+          const im = document.createElement("img");
+          im.src = "data:image/png;base64," + b64;
+          im.title = "样本 " + (idx + 1);
+          im.onclick = () => {
+            mainImage.src = im.src;
+          };
+          thumbsDiv.appendChild(im);
+        });
+
+        statusSpan.textContent = "生成完成。";
+      })
+      .catch(err => {
+        console.error(err);
+        alert("请求失败，请查看浏览器控制台。");
+        statusSpan.textContent = "请求失败。";
+      })
+      .finally(() => {
+        generateBtn.disabled = false;
+        generateBtn.textContent = "生成平面图";
+      });
+  });
+</script>
+</body>
+</html>
