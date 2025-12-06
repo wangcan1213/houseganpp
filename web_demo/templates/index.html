@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <title>HouseGAN++ 交互 Demo</title>
+  <title>HouseGAN++ 交互式住宅户型生成</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -31,7 +31,7 @@
 
     header h1 {
       margin: 0;
-      font-size: 18px;
+      font-size: 21px;
       font-weight: 600;
     }
 
@@ -146,14 +146,17 @@
     }
 
     .graph-wrapper {
-      flex: 1;
+      /* flex: 1; */
+      flex: 0 0 800px;
       margin-top: 4px;
+      margin-bottom: 10px;
       border-radius: 8px;
       background: #ffffff;
       border: 1px solid #d1d5db;
       overflow: hidden;
       position: relative;
       min-height: 260px;
+      height: 10vh; 
     }
 
     #graph {
@@ -234,25 +237,33 @@
 
   <header>
     <div>
-      <h1>HouseGAN++ 交互式房间连通图 Demo</h1>
+      <h1>HouseGAN++ 交互式住宅户型生成</h1>
       <div class="subtitle">左侧编辑房间连通关系，右侧实时查看 HouseGAN++ 生成的平面图样本。</div>
+      <div class="subtitle">GAN模型开发：Nelson Nauata, Sepidehsadat Hosseini, Kai-Hung Chang, Hang Chu, Chin-Yi Cheng, Yasutaka Furukawa</div>
+      <div class="subtitle">GAN模型论文：<a href="https://arxiv.org/abs/2103.02574">House-GAN++: Generative Adversarial Layout Refinement Networks</a></div>
+      <div class="subtitle">Demo开发：苏州大学 王灿</div>
     </div>
   </header>
 
   <div class="main-layout">
     <!-- 左侧：交互式房间图 -->
     <div class="panel left-panel">
-      <h2>交互式房间连通图（左键移动，右键连线）</h2>
-
+      <h2>交互式房间连通图</h2>
+      <div class="graph-wrapper">
+        <div id="graph"></div>
+      </div>
       <div class="palette" id="palette"></div>
-
       <div id="toolbar">
         <button id="generateBtn">生成平面图</button>
         <label>样本数：
           <select id="numSamples">
             <option value="1">1</option>
             <option value="2">2</option>
+            <option value="3">3</option>
             <option value="4" selected>4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
             <option value="8">8</option>
           </select>
         </label>
@@ -263,27 +274,23 @@
         左键拖动节点移动；右键按住节点 → 拖到另一节点 → 松开右键 = 添加/删除连线。<br>
         点击画布空白区域会添加一个当前选中房型的节点。
       </div>
-
-      <div class="graph-wrapper">
-        <div id="graph"></div>
-      </div>
     </div>
 
     <!-- 右侧：生成结果 -->
     <div class="panel right-panel">
-      <h2>HouseGAN++ 生成结果</h2>
+      <h2>HouseGAN++ 住宅户型生成结果</h2>
       <div class="result-main-image">
-        <img id="mainImage" alt="生成结果预览">
+        <img id="mainImage" alt="">
       </div>
       <div id="thumbs"></div>
     </div>
   </div>
 
   <footer>
-    基于 <a href="https://arxiv.org/abs/2103.02574" target="_blank" rel="noopener noreferrer">
+    <!-- 基于 <a href="https://arxiv.org/abs/2103.02574" target="_blank" rel="noopener noreferrer">
       House-GAN++: Generative Adversarial Layout Refinement Networks
     </a> （Nelson Nauata, Sepidehsadat Hosseini, Kai-Hung Chang, Hang Chu,
-    Chin-Yi Cheng, Yasutaka Furukawa）实现交互式住宅平面图生成。
+    Chin-Yi Cheng, Yasutaka Furukawa）实现交互式住宅平面图生成。 -->
   </footer>
 </div>
 
