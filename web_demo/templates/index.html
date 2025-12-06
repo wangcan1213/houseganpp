@@ -10,34 +10,69 @@
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #f3f4f6;
+      color: #111827;
     }
-    .container {
+
+    .page {
+      min-height: 100vh;
       display: flex;
-      height: 100vh;
+      flex-direction: column;
     }
-    .left-panel {
+
+    header {
+      padding: 10px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    header .subtitle {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .main-layout {
       flex: 1;
-      border-right: 1px solid #ccc;
-      padding: 12px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 16px;
+      padding: 12px 16px 16px;
+    }
+
+    .panel {
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      border: 1px solid #e5e7eb;
+      padding: 12px 12px 14px;
       display: flex;
       flex-direction: column;
+      min-height: 0; /* for flex children */
     }
-    .right-panel {
-      width: 40%;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
+
+    .left-panel h2,
+    .right-panel h2 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-weight: 600;
     }
-    h2 {
-      margin: 4px 0 8px;
-      font-size: 16px;
-    }
+
     .palette {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
       margin-bottom: 8px;
     }
+
     .room-btn {
       border: none;
       padding: 4px 10px;
@@ -48,182 +83,294 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      background: #666;
+      background: #6b7280;
+      transition: box-shadow 0.15s ease, transform 0.1s ease;
+    }
+    .room-btn:hover {
+      transform: translateY(-1px);
     }
     .room-btn.active {
-      box-shadow: 0 0 0 2px rgba(0,112,243,0.5);
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.55);
     }
+
     .color-dot {
       width: 10px;
       height: 10px;
       border-radius: 999px;
       background: #fff;
     }
-    #graph {
-      flex: 1;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 4px rgba(0,0,0,.08);
-      margin-top: 6px;
-    }
-    #status {
-      font-size: 12px;
-      color: #444;
-      margin-top: 4px;
-    }
+
     #toolbar {
       display: flex;
       align-items: center;
       gap: 8px;
       font-size: 12px;
-      margin-top: 4px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
     }
+
     #graphInfo {
       font-size: 12px;
-      color: #555;
+      color: #4b5563;
     }
+
     #generateBtn {
       padding: 4px 10px;
       border-radius: 4px;
       border: none;
-      background: #0070f3;
+      background: #2563eb;
       color: #fff;
       font-size: 12px;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    #generateBtn:hover:not(:disabled) {
+      background: #1d4ed8;
     }
     #generateBtn:disabled {
-      opacity: 0.6;
+      opacity: 0.65;
       cursor: default;
     }
+
     #numSamples {
       font-size: 12px;
     }
 
-    .right-panel h2 {
-      margin-bottom: 8px;
+    #status {
+      font-size: 12px;
+      color: #4b5563;
+      margin-bottom: 6px;
+      line-height: 1.4;
     }
-    #mainImage {
+
+    .graph-wrapper {
+      flex: 1;
+      margin-top: 4px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      overflow: hidden;
+      position: relative;
+      min-height: 260px;
+    }
+
+    #graph {
       width: 100%;
-      max-width: 380px;
-      height: auto;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      height: 100%;
+    }
+
+    /* 右侧结果区域 */
+    .right-panel {
+      align-items: stretch;
+    }
+
+    .result-main-image {
+      width: 100%;
+      height: 320px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    #mainImage {
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
     }
+
     #thumbs {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
+      gap: 8px;
+      padding-top: 4px;
     }
+
     #thumbs img {
       width: 80px;
       height: 80px;
-      border-radius: 4px;
-      border: 1px solid #ddd;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
       cursor: pointer;
-      object-fit: contain;
+      object-fit: cover;
+      background: #f9fafb;
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    #thumbs img:hover {
+      transform: scale(1.03);
+      border-color: #9ca3af;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.16);
+    }
+    #thumbs img.selected {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 2px rgba(239,68,68,0.45);
+      transform: scale(1.05);
+    }
+
+    footer {
+      padding: 6px 16px 10px;
+      font-size: 11px;
+      color: #6b7280;
+      border-top: 1px solid #e5e7eb;
+      background: #f9fafb;
+      line-height: 1.5;
+    }
+    footer a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-<div class="container">
+<div class="page">
 
-  <div class="left-panel">
-    <h2>交互式房间连通图（左移右连）</h2>
+  <header>
+    <div>
+      <h1>HouseGAN++ 交互式房间连通图 Demo</h1>
+      <div class="subtitle">左侧编辑房间连通关系，右侧实时查看 HouseGAN++ 生成的平面图样本。</div>
+    </div>
+  </header>
 
-    <div class="palette" id="palette"></div>
+  <div class="main-layout">
+    <!-- 左侧：交互式房间图 -->
+    <div class="panel left-panel">
+      <h2>交互式房间连通图（左键移动，右键连线）</h2>
 
-    <div id="toolbar">
-      <button id="generateBtn">生成平面图</button>
-      <label>样本数：
-        <select id="numSamples">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="4" selected>4</option>
-          <option value="8">8</option>
-        </select>
-      </label>
-      <span id="graphInfo">节点: <span id="nodeCount">0</span>，连线: <span id="edgeCount">0</span></span>
+      <div class="palette" id="palette"></div>
+
+      <div id="toolbar">
+        <button id="generateBtn">生成平面图</button>
+        <label>样本数：
+          <select id="numSamples">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="4" selected>4</option>
+            <option value="8">8</option>
+          </select>
+        </label>
+        <span id="graphInfo">节点: <span id="nodeCount">0</span>，连线: <span id="edgeCount">0</span></span>
+      </div>
+
+      <div id="status">
+        左键拖动节点移动；右键按住节点 → 拖到另一节点 → 松开右键 = 添加/删除连线。<br>
+        点击画布空白区域会添加一个当前选中房型的节点。
+      </div>
+
+      <div class="graph-wrapper">
+        <div id="graph"></div>
+      </div>
     </div>
 
-    <div id="status">
-      左键拖动节点移动；右键按住节点 → 拖到另一节点 → 松开右键 = 添加/删除连线。<br>
-      点击空白区域添加一个当前房型的节点。
+    <!-- 右侧：生成结果 -->
+    <div class="panel right-panel">
+      <h2>HouseGAN++ 生成结果</h2>
+      <div class="result-main-image">
+        <img id="mainImage" alt="生成结果预览">
+      </div>
+      <div id="thumbs"></div>
     </div>
-
-    <div id="graph"></div>
   </div>
 
-  <div class="right-panel">
-    <h2>HouseGAN++ 生成结果</h2>
-    <img id="mainImage" alt="生成结果预览">
-    <div id="thumbs"></div>
-  </div>
-
+  <footer>
+    基于 <a href="https://arxiv.org/abs/2103.02574" target="_blank" rel="noopener noreferrer">
+      House-GAN++: Generative Adversarial Layout Refinement Networks
+    </a> （Nelson Nauata, Sepidehsadat Hosseini, Kai-Hung Chang, Hang Chu,
+    Chin-Yi Cheng, Yasutaka Furukawa）实现交互式住宅平面图生成。
+  </footer>
 </div>
 
 <script>
-  // ============ 全局状态 ============
+  /* 防止 Edge 右键手势 */
+  window.addEventListener("contextmenu", e => e.preventDefault());
+  window.addEventListener("dragstart", e => e.preventDefault());
+  window.addEventListener("mousedown", e => { if (e.button === 2) e.preventDefault(); });
+  
+  /* ==================== 全局变量 ==================== */
   const paletteDiv = d3.select("#palette");
   const graphDiv = document.getElementById("graph");
-  const canvasWidth = graphDiv.clientWidth;
-  const canvasHeight = graphDiv.clientHeight;
-
+  
+  const canvasWidth = graphDiv.clientWidth || 600;
+  const canvasHeight = graphDiv.clientHeight || 400;
+  
   const svg = d3.select("#graph")
     .append("svg")
-    .attr("width", canvasWidth)
-    .attr("height", canvasHeight)
-    .style("background", "#fff");
-
-  // 禁用右键菜单
-  svg.on("contextmenu", event => event.preventDefault());
-
-  const linkGroup = svg.append("g").attr("stroke","#888").attr("stroke-width",2);
-  const tempLinkGroup = svg.append("g").attr("stroke","#444").attr("stroke-width",1).attr("stroke-dasharray","4 4");
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("viewBox", `0 0 ${canvasWidth} ${canvasHeight}`)
+    .style("background", "#ffffff");
+  
+  const linkGroup = svg.append("g").attr("stroke", "#888").attr("stroke-width", 2);
   const nodeGroup = svg.append("g");
   const labelGroup = svg.append("g");
-
-  let roomTypes = [];      // [{key,label,color,label_id}, ...] 从后端获取
-  let addModeKey = null;   // 当前 palette 选中的房型 key
-
-  let nodes = [];          // {id, key, label, x, y}
-  let links = [];          // {source, target}
+  
+  let roomTypes = [];
+  let addModeKey = null;
+  
+  let nodes = [];
+  let links = [];
   let nextId = 0;
-
+  
+  let selectedNodeId = null;  // ★ 右键点击起点
+  
   let nodeElems = nodeGroup.selectAll("circle");
   let linkElems = linkGroup.selectAll("line");
   let labelElems = labelGroup.selectAll("text");
-
-  let nodeCountSpan = document.getElementById("nodeCount");
-  let edgeCountSpan = document.getElementById("edgeCount");
-  let statusSpan = document.getElementById("status");
+  
+  const nodeCountSpan = document.getElementById("nodeCount");
+  const edgeCountSpan = document.getElementById("edgeCount");
+  const statusSpan = document.getElementById("status");
   const generateBtn = document.getElementById("generateBtn");
   const numSamplesSelect = document.getElementById("numSamples");
   const mainImage = document.getElementById("mainImage");
   const thumbsDiv = document.getElementById("thumbs");
-
-  // 临时连线预览（右键拖动）
-  let tempLine = null;
-  let rightDragStartNode = null;
-  let isDraggingRight = false;
-
-  // ============ 从后端获取房型列表 ============
+  
+  
+  /* ==================== 辅助函数 ==================== */
+  function findRoomTypeByKey(key) {
+    return roomTypes.find(rt => rt.key === key);
+  }
+  
+  function nodeById(id) {
+    return nodes.find(n => n.id === id);
+  }
+  
+  function getNodeAt(x, y) {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i];
+      if ((n.x - x) ** 2 + (n.y - y) ** 2 <= 20 ** 2) return n;
+    }
+    return null;
+  }
+  
+  function updateCounts() {
+    nodeCountSpan.textContent = nodes.length;
+    edgeCountSpan.textContent = links.length;
+  }
+  
+  
+  /* ==================== 读取房型 ==================== */
   fetch("/room_types")
     .then(r => r.json())
     .then(data => {
       roomTypes = data.room_types || [];
-      if (roomTypes.length === 0) {
-        statusSpan.textContent = "（未能从后端获取房型列表，请检查 /room_types）";
+      if (!roomTypes.length) {
+        statusSpan.textContent = "无法获取房型，请检查后端。";
         return;
       }
+  
       renderPalette();
-      // 默认选第一个房型
       addModeKey = roomTypes[0].key;
       d3.select(`#btn-${addModeKey}`).classed("active", true);
-
-      // 初始加一个节点
+  
+      // 初始添加一个节点
       nodes.push({
         id: nextId++,
         key: roomTypes[0].key,
@@ -233,12 +380,10 @@
       });
       updateCounts();
       updateGraph();
-    })
-    .catch(err => {
-      console.error(err);
-      statusSpan.textContent = "获取房型失败，请检查控制台。";
     });
-
+  
+  
+  /* ==================== 渲染房间选择条 ==================== */
   function renderPalette() {
     paletteDiv.selectAll("*").remove();
     roomTypes.forEach(rt => {
@@ -251,182 +396,117 @@
           d3.selectAll(".room-btn").classed("active", false);
           d3.select(`#btn-${rt.key}`).classed("active", true);
         });
-
-      btn.append("span")
-        .attr("class", "color-dot")
-        .style("background", rt.color);
-
-      btn.append("span")
-        .text(rt.label);
+  
+      btn.append("span").attr("class", "color-dot").style("background", rt.color);
+      btn.append("span").text(rt.label);
     });
   }
-
-  // ============ 辅助查询 ============
-  function findRoomTypeByKey(key) {
-    return roomTypes.find(rt => rt.key === key);
-  }
-
-  function nodeById(id) {
-    return nodes.find(n => n.id === id);
-  }
-
-  function getNodeAt(x, y, exceptId = null) {
-    for (let i = nodes.length - 1; i >= 0; i--) {
-      const n = nodes[i];
-      if (exceptId !== null && n.id === exceptId) continue;
-      const dx = n.x - x;
-      const dy = n.y - y;
-      if (dx*dx + dy*dy <= 20*20) return n;
-    }
-    return null;
-  }
-
-  function updateCounts() {
-    nodeCountSpan.textContent = nodes.length;
-    edgeCountSpan.textContent = links.length;
-  }
-
-  // ============ 左键：点击空白添加节点 ============
+  
+  
+  /* ==================== 左键添加节点 ==================== */
   svg.on("click", (event) => {
+    if (event.button !== 0) return;
+  
     const [x, y] = d3.pointer(event);
     const hit = getNodeAt(x, y);
-    // 如果点在节点上，就不在这里处理（避免与拖动、连线冲突）
     if (hit) return;
-
-    if (!addModeKey) {
-      statusSpan.textContent = "请先在上方选择一个房间类型。";
-      return;
-    }
+  
     const rt = findRoomTypeByKey(addModeKey);
-    if (!rt) {
-      statusSpan.textContent = "当前选中的房型在列表中不存在，请刷新。";
-      return;
-    }
     nodes.push({
       id: nextId++,
       key: rt.key,
       label: rt.label,
       x, y
     });
+  
     updateCounts();
     updateGraph();
   });
-
-  // ============ 右键拖动连线/删线 ============
-  svg.on("pointerdown", (event) => {
-    const [mx, my] = d3.pointer(event);
-    const targetNode = getNodeAt(mx, my);
-    if (!targetNode) return;
-
-    if (event.button === 2) {
-      // 右键按下：开始拖线
-      isDraggingRight = true;
-      rightDragStartNode = targetNode;
-
-      tempLine = tempLinkGroup.append("line")
-        .attr("x1", targetNode.x)
-        .attr("y1", targetNode.y)
-        .attr("x2", mx)
-        .attr("y2", my);
-    }
-  });
-
-  svg.on("pointermove", (event) => {
-    if (!isDraggingRight || !tempLine) return;
-    const [mx, my] = d3.pointer(event);
-    tempLine.attr("x2", mx).attr("y2", my);
-  });
-
-  svg.on("pointerup", (event) => {
-    if (event.button !== 2) return;
-    const [mx, my] = d3.pointer(event);
-
-    if (isDraggingRight && rightDragStartNode) {
-      const targetNode = getNodeAt(mx, my, rightDragStartNode.id);
-      if (tempLine) tempLine.remove();
-      tempLine = null;
-
-      if (targetNode) {
-        toggleLink(rightDragStartNode.id, targetNode.id);
+  
+  
+  /* ==================== ★ 新的右键连线逻辑（稳定） ==================== */
+  svg.on("mousedown", (event) => {
+    if (event.button !== 2) return;  // 仅右键
+  
+    const [x, y] = d3.pointer(event);
+    const hit = getNodeAt(x, y);
+  
+    if (hit) {
+      if (selectedNodeId === null) {
+        // 选中起点
+        selectedNodeId = hit.id;
+      } else if (selectedNodeId === hit.id) {
+        // 再点一次取消
+        selectedNodeId = null;
+      } else {
+        // 第二次右键 → 添加或删除连线
+        toggleLink(selectedNodeId, hit.id);
+        selectedNodeId = null;
       }
-    }
-    isDraggingRight = false;
-    rightDragStartNode = null;
-  });
-
-  // ============ 左键拖动节点 ============
-  const drag = d3.drag()
-    .on("start", (event, d) => {
-      if (event.sourceEvent.button !== 0) return; // 只响应左键
-      d.fx = d.x;
-      d.fy = d.y;
-    })
-    .on("drag", (event, d) => {
-      if (event.sourceEvent.button !== 0) return;
-      d.x = event.x;
-      d.y = event.y;
-      d.fx = event.x;
-      d.fy = event.y;
-      updateGraph();
-    })
-    .on("end", (event, d) => {
-      if (event.sourceEvent.button !== 0) return;
-      d.fx = null;
-      d.fy = null;
-    });
-
-  function toggleLink(aId, bId) {
-    if (aId === bId) return;
-    const idx = links.findIndex(l =>
-      (l.source === aId && l.target === bId) ||
-      (l.source === bId && l.target === aId)
-    );
-    if (idx >= 0) {
-      // 已存在 → 删除
-      links.splice(idx, 1);
     } else {
-      // 不存在 → 添加
-      links.push({ source: aId, target: bId });
+      // 空白处取消选择
+      selectedNodeId = null;
     }
-    updateCounts();
+  
     updateGraph();
+  });
+  
+  
+  /* ==================== 添加/删除连线 ==================== */
+  function toggleLink(a, b) {
+    const idx = links.findIndex(l =>
+      (l.source === a && l.target === b) ||
+      (l.source === b && l.target === a)
+    );
+  
+    if (idx >= 0) links.splice(idx, 1);
+    else links.push({ source: a, target: b });
+  
+    updateCounts();
   }
-
-  // ============ 重绘图形 ============
+  
+  
+  /* ==================== 节点可拖动 ==================== */
+  const drag = d3.drag()
+    .on("start", (e, d) => { if (e.sourceEvent.button === 0) d.fx = d.x, d.fy = d.y; })
+    .on("drag", (e, d) => { if (e.sourceEvent.button === 0) d.x = e.x, d.y = e.y; updateGraph(); })
+    .on("end", (e, d) => { if (e.sourceEvent.button === 0) d.fx = d.fy = null; });
+  
+  
+  /* ==================== 重绘图形（保持原来样式） ==================== */
   function updateGraph() {
-    // 更新连线
+    // 连线
     linkElems = linkElems.data(links, d => `${d.source}-${d.target}`);
     linkElems.exit().remove();
     linkElems = linkElems.enter()
       .append("line")
+      .attr("pointer-events", "stroke")
       .merge(linkElems)
       .attr("x1", d => nodeById(d.source).x)
       .attr("y1", d => nodeById(d.source).y)
       .attr("x2", d => nodeById(d.target).x)
       .attr("y2", d => nodeById(d.target).y);
-
-    // 更新节点
+  
+    // 节点
     nodeElems = nodeElems.data(nodes, d => d.id);
     nodeElems.exit().remove();
     nodeElems = nodeElems.enter()
       .append("circle")
       .attr("r", 16)
-      .attr("stroke", "#333")
       .attr("stroke-width", 2)
       .call(drag)
       .merge(nodeElems)
       .attr("cx", d => d.x)
       .attr("cy", d => d.y)
-      .attr("fill", d => {
-        const rt = findRoomTypeByKey(d.key);
-        return rt ? rt.color : "#cccccc";
-      });
-
-    // 更新文本标签（显示房间名）
+      .attr("fill", d => findRoomTypeByKey(d.key)?.color || "#9ca3af")
+      .attr("stroke", d => d.id === selectedNodeId ? "#3b82f6" : "#374151"); // ★ 高亮
+  
+    // 标签
     labelElems = labelElems.data(nodes, d => d.id);
     labelElems.exit().remove();
     labelElems = labelElems.enter()
       .append("text")
+      .style("pointer-events", "none")
       .attr("font-size", 11)
       .attr("text-anchor", "middle")
       .attr("dy", 28)
@@ -435,24 +515,22 @@
       .attr("y", d => d.y)
       .text(d => d.label);
   }
-
-  // ============ 调用后端 /generate ============
+  
+  
+  /* ==================== 调用后端生成 ==================== */
   generateBtn.addEventListener("click", () => {
-    if (nodes.length === 0) {
-      alert("请先在左侧画布中添加至少一个房间节点。");
-      return;
-    }
-
+    if (!nodes.length) return alert("请至少添加一个节点。");
+  
     const payload = {
-      nodes: nodes.map(n => ({ id: n.id, label: n.key })),  // label = ROOM_CLASS 的 key
+      nodes: nodes.map(n => ({ id: n.id, label: n.key })),
       edges: links.map(l => [l.source, l.target]),
       num_samples: parseInt(numSamplesSelect.value, 10)
     };
-
+  
     generateBtn.disabled = true;
     generateBtn.textContent = "生成中...";
-    statusSpan.textContent = "正在调用 HouseGAN++ 推理，请稍候…";
-
+    statusSpan.textContent = "正在生成，请稍候…";
+  
     fetch("/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -461,44 +539,33 @@
       .then(r => r.json())
       .then(data => {
         if (data.error) {
-          console.error(data.error);
-          alert("后端错误：\n" + data.error);
-          statusSpan.textContent = "生成失败（请查看后端日志）。";
+          alert("后端错误：" + data.error);
           return;
         }
+  
         const imgs = data.images || [];
         thumbsDiv.innerHTML = "";
-        if (imgs.length === 0) {
-          statusSpan.textContent = "没有生成任何结果。";
-          mainImage.removeAttribute("src");
-          return;
-        }
-
-        // 显示第一张为大图
+        if (!imgs.length) return;
+  
         mainImage.src = "data:image/png;base64," + imgs[0];
-
+  
         imgs.forEach((b64, idx) => {
           const im = document.createElement("img");
           im.src = "data:image/png;base64," + b64;
-          im.title = "样本 " + (idx + 1);
           im.onclick = () => {
             mainImage.src = im.src;
           };
           thumbsDiv.appendChild(im);
         });
-
+  
         statusSpan.textContent = "生成完成。";
-      })
-      .catch(err => {
-        console.error(err);
-        alert("请求失败，请查看浏览器控制台。");
-        statusSpan.textContent = "请求失败。";
       })
       .finally(() => {
         generateBtn.disabled = false;
         generateBtn.textContent = "生成平面图";
       });
   });
-</script>
+  </script>
+  
 </body>
 </html>
