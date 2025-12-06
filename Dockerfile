@@ -2,8 +2,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN sed -i 's@http://deb.debian.org@http://mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list && \
-    sed -i 's@http://security.debian.org@http://mirrors.tuna.tsinghua.edu.cn@g' /etc/apt/sources.list
+RUN rm -f /etc/apt/sources.list.d/debian.sources && \
+    echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list && \
+    echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian/ bookworm-updates main contrib non-free non-free-firmware" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.tuna.tsinghua.edu.cn/debian-security bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+
 
 
 RUN apt-get update && apt-get install -y \
