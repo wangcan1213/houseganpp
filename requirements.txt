@@ -11,3 +11,4 @@ torchvision==0.17.1
 webcolors==1.13
 flask==3.0.2
 scikit-image==0.22.0
+pygraphviz==1.14
