@@ -67,7 +67,7 @@ def _infer(graph, model, prev_state=None):
     z, given_masks_in, given_nds, given_eds = _init_input(graph, prev_state)
     # run inference model
     with torch.no_grad():
-        masks = model(z.to('cuda'), given_masks_in.to('cuda'), given_nds.to('cuda'), given_eds.to('cuda'))
+        masks = model(z.to(DEVICE), given_masks_in.to(DEVICE), given_nds.to(DEVICE), given_eds.to(DEVICE))
         masks = masks.detach().cpu().numpy()
     return masks
 
