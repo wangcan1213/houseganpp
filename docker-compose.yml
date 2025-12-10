@@ -6,11 +6,9 @@ services:
     container_name: housegan_1
     ports:
       - "8050:5000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
     restart: always
 
   housegan_2:
@@ -18,11 +16,9 @@ services:
     container_name: housegan_2
     ports:
       - "8051:5000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
     restart: always
 
   housegan_3:
@@ -30,11 +26,9 @@ services:
     container_name: housegan_3
     ports:
       - "8052:5000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
     restart: always
 
   housegan_4:
@@ -42,11 +36,9 @@ services:
     container_name: housegan_4
     ports:
       - "8053:5000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
     restart: always
 
   housegan_5:
@@ -54,11 +46,9 @@ services:
     container_name: housegan_5
     ports:
       - "8054:5000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
     restart: always
 
   housegan_6:
@@ -66,11 +56,9 @@ services:
     container_name: housegan_6
     ports:
       - "8055:5000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
     restart: always
 
   housegan_7:
@@ -78,11 +66,9 @@ services:
     container_name: housegan_7
     ports:
       - "8056:5000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
     restart: always
 
   housegan_8:
@@ -90,9 +76,8 @@ services:
     container_name: housegan_8
     ports:
       - "8057:5000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
     restart: always
+
