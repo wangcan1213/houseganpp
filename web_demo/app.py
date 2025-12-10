@@ -287,7 +287,12 @@ def generate():
         # 出错时，把错误消息返回前端，方便你调试
         return jsonify({"error": str(e)}), 500
 
-    return jsonify({"images": images_b64})
+    container_id = os.environ.get("CONTAINER_ID", "unknown")
+
+    return jsonify({
+        "images": images_b64,
+        "container": container_id   
+    })
 
 
 if __name__ == "__main__":
